@@ -1,10 +1,10 @@
-use clap::{App, Arg};
-use std::env;
-use colored::*;
-use termimad::*;
 use anyhow::Result as AnyhowResult;
-use deepmath::data_retrieve::download as download;
-use deepmath::data_retrieve::unarchive as unarchive;
+use clap::{App, Arg};
+use colored::*;
+use deepmath::data_retrieve::download;
+use deepmath::data_retrieve::unarchive;
+use std::env;
+use termimad::*;
 
 // Just in case, to stay on the safe side
 const _THIS_ALGORITHM_BECOME_SKYNET: bool = false;
@@ -44,7 +44,6 @@ is the case, then deepmath will solve a default set of equations.
 fn show_tutorial(skin: &MadSkin) {
     println!("{}", skin.inline(TUTORIAL));
 }
-
 
 fn run(is_debug: bool) -> AnyhowResult<()> {
     simple_logger::init().unwrap();
@@ -94,33 +93,66 @@ fn main() {
                     .help("Toggles debug mode for verbose output"),
             )
             .arg(
-                Arg::new("export")
-                    .short('e')
-                    .long("export")
-                    .help("Export data only and disable training"),
+                Arg::new("prepare")
+                    .short('p')
+                    .long("prepare")
+                    .help("Download training and test data from Facebook AI"),
             )
             .arg(
                 Arg::new("tutorial")
-                    .short('t')
+                    .short('q')
                     .long("tutorial")
                     .help("Shows the Deepmath tutorial"),
+            )
+            .arg(
+                Arg::new("train_to")
+                    .short('t')
+                    .long("train_to")
+                    .help("Train model and save model to a file")
+                    .takes_value(true),
+            )
+            .arg(
+                Arg::new("predict")
+                    .short('c')
+                    .long("predict")
+                    .help("Uses trained model to predict. Must be \
+                    used with --load for the trained model to load, \
+                    and optionally with --input for an input \
+                    equation list to solve")
+                    .takes_value(true),
             )
             .get_matches();
         // Let's just...ignore the fact that we should check the options
         // before we start
         // check_model_params(matches)
         let is_show_tutorial = matches.is_present("tutorial");
+        let is_prepare = matches.is_present("prepare");
+        let is_debug_mode = matches.is_present("debug");
+        let is_train_to_file = matches.is_present("train_to");
         // Single out is_show_tutorial because it doesn't require
         // executing the run() function in any way
         if is_show_tutorial {
             let skin = MadSkin::default();
             show_tutorial(&skin);
-        } else {
-            let is_debug_mode = matches.is_present("debug");
-            // let is_export_only = matches.is_present("export");
-            let run_result = run(is_debug_mode);
-            if let Err(err) = run_result {
-                log::error!("Error: {}", err)
+        }
+        if is_prepare {
+            if is_debug_mode {
+                let run_result = run(false);
+                if let Err(err) = run_result {
+                    log::error!("Error: {}", err)
+                }
+            } else {
+                let run_result = run(false);
+                if let Err(err) = run_result {
+                    log::error!("Error: {}", err)
+                }
+            }
+        }
+        if is_train_to_file {
+            if is_debug_mode {
+                log::info!("Sorry, training to file (debug) is not yet done")
+            } else {
+                log::info!("Sorry, training to file (standard) is not yet done")
             }
         }
     }
