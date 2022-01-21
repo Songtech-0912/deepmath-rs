@@ -1,8 +1,8 @@
 use anyhow::Result as AnyhowResult;
 use flate2::read::GzDecoder;
-use tar::Archive;
 use std::fs;
 use std::path::Path;
+use tar::Archive;
 
 pub fn decompress(filepath: &Path, parent_dir: &Path, is_debug: bool) -> AnyhowResult<()> {
     let tar_gz = fs::File::open(&filepath)?;
