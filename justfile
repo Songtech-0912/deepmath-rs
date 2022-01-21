@@ -3,7 +3,13 @@ default:
   @just --list
 
 init:
-    git config core.hooksPath .githooks
+  git config core.hooksPath .githooks
 
 format:
-    cargo fmt
+  cargo fmt
+
+watch:
+  cargo watch -c -x check
+
+run:
+  cargo run
