@@ -23,15 +23,15 @@ Note that this does _not_ generate the data set from scratch, it instead downloa
 ### Train model
 
 ``` sh
-./target/release/deepmath --train_to "model.dat"
+./target/release/deepmath --train
 ```
 
-This saves the trained model to a `.dat` file, and reminds you to run `deepmath --prepare` if the dataset wasn't already downloaded or wasn't downloaded to the right place. Note that the training will be CPU-only.
+This saves the trained model to a `.dat` file in `$TEMP_DIR/deepmath_data.dat` (this resolves to `%userprofile%\AppData\Local\Temp` on Windows, `/tmp` on Mac and same for Linux), and reminds you to run `deepmath --prepare` if the dataset wasn't already downloaded or wasn't downloaded to the right place. Note that the training will be CPU-only.
 
 ### Run model and predict
 
 ``` sh
-./target/release/deepmath --load "model.dat" --input "equations.yml" --predict
+./target/release/deepmath --input "equations.yml" --predict
 ```
 
 This loads the built model (reminding you to do the data loading and training steps if the model doesn't exist). It takes in a `yml` file consisting of integration problems and first- and second-order differential equations to solve. There is a `equations.yml` pre-provided in the repository; if not, Deepmath will try to solve a default selection of integral and differential equations.
