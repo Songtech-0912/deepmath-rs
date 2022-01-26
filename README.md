@@ -14,6 +14,8 @@ cargo build --release
 
 ### Get dataset
 
+The original repository provided tools to generate data on the fly. However, because data generation can take quite a long time, I've decided to skip this and use the original paper's publicly-available dataset instead.
+
 ``` sh
 ./target/release/deepmath --prepare
 ```
