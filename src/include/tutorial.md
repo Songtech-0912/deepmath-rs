@@ -17,7 +17,7 @@ deepmath --train --debug
 ```
 
 By default Deepmath will train its model to `$PWD/deepmath_model/model.dat`. You can use the `--train_to <yourmodel.dat>` option instead to train
-to the location of your choice.
+to a model at a custom location.
 
 **Step 3: Use the model to solve**
 
