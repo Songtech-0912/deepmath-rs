@@ -154,7 +154,6 @@ fn argparse() -> clap::ArgMatches {
 
 fn main() -> AnyhowResult<()> {
     // Handle empty argument
-    let mut is_run = false;
     let args: Vec<String> = env::args().collect();
     // Custom welcome messsage if user doesn't have any args
     if args.len() == 1 {
@@ -166,16 +165,10 @@ fn main() -> AnyhowResult<()> {
                 "deepmath --tutorial".green()
             )
         );
-    } else {
-        is_run = true
-    }
-    if is_run {
+    } else  {
         // Uses a much-simplified set of arguments compared to
         // the original implementation
         let matches = argparse();
-        // Let's just...ignore the fact that we should check the options
-        // before we start
-        // check_model_params(matches)
         simple_logger::init().unwrap();
         let is_show_tutorial = matches.is_present("tutorial");
         let is_debug_mode = matches.is_present("debug");
@@ -192,18 +185,14 @@ fn main() -> AnyhowResult<()> {
           Deepmath would still function properly, of course
           it would have to do everything, but it doesn't break
         */
-
+        let mut is_parsed = false;
         if is_show_tutorial {
+            is_parsed = true;
             let skin = MadSkin::default();
             show_tutorial(&skin);
         }
-        // download data function doesn't really need args
-        // like the use case of downloading to a custom folder
-        // is pretty small
-        // and the temp folder has auto-cleanup which is always
-        // nice
-        // but maybe add args (for specifying custom location) in the future?
         if is_prepare {
+            is_parsed = true;
             if is_debug_mode {
                 prepare(true)?;
             } else {
@@ -212,6 +201,7 @@ fn main() -> AnyhowResult<()> {
         }
         // regular train, to default path
         if is_train {
+            is_parsed = true;
             if is_debug_mode {
                 train(None, true)?;
             } else {
@@ -220,6 +210,7 @@ fn main() -> AnyhowResult<()> {
         }
         // train to specific path
         if is_train_to_file {
+            is_parsed = true;
             if is_debug_mode {
                 let model_file = Path::new(matches.value_of("train_to").unwrap());
                 train(Some(model_file), true)?;
@@ -229,6 +220,7 @@ fn main() -> AnyhowResult<()> {
         }
         // predict
         if is_predict {
+            is_parsed = true;
             let model_to_load = match is_predict_load {
                 true => Some(Path::new(matches.value_of("load").unwrap())),
                 false => unimplemented!()
@@ -240,8 +232,10 @@ fn main() -> AnyhowResult<()> {
                 predict(model_to_load, false)?;
             }
         }
+        if !is_parsed {
         // catch-all for everything else
-        log::error!("Sorry, Deepmath couldn't figure out how you wanted to run. This might be because you didn't specify the proper command-line flags. Try running {}", "deepmath --tutorial".green());
+            log::error!("Sorry, Deepmath couldn't figure out how you wanted to run. This might be because you didn't specify the proper command-line flags. Try running {}", "deepmath --tutorial".green());
+        }
     }
     Ok(())
 }
