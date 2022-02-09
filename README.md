@@ -20,7 +20,7 @@ The original repository provided tools to generate data on the fly. However, bec
 ./target/release/deepmath --prepare
 ```
 
-Note that this does _not_ generate the data set from scratch, it instead downloads the pre-built dataset tarball from the Facebook AI servers to your `/tmp` folder. If the dataset is already downloaded, it will not run.
+Note that this does _not_ generate the data set from scratch, it instead downloads the pre-built dataset tarball from Facebook AI to a `deepmath_data` folder in your current directory.
 
 ### Train model
 
@@ -28,29 +28,14 @@ Note that this does _not_ generate the data set from scratch, it instead downloa
 ./target/release/deepmath --train
 ```
 
-This saves the trained model to a `.dat` file in `$TEMP_DIR/deepmath_data.dat` (this resolves to `%userprofile%\AppData\Local\Temp` on Windows, `/tmp` on Mac and same for Linux), and reminds you to run `deepmath --prepare` if the dataset wasn't already downloaded or wasn't downloaded to the right place. Note that the training will be CPU-only.
+This saves the trained model to a `.dat` file in `./deepmath_model/model.dat`, which will also be in your current directory. Note that the training will be CPU-only. Training parameters cannot be modified.
 
 ### Run model and predict
 
 ``` sh
-./target/release/deepmath --input "equations.yml" --predict
+./target/release/deepmath --predict
 ```
 
-This loads the built model (reminding you to do the data loading and training steps if the model doesn't exist). It takes in a `yml` file consisting of integration problems and first- and second-order differential equations to solve. There is a `equations.yml` pre-provided in the repository; if not, Deepmath will try to solve a default selection of integral and differential equations.
+This loads the built model, and if loading is successful, it starts the WebView UI for using the model with a Jupyter-style interface. The UI will allow you to inspect the model, as well as using the model to solve integration problems and differential equations.
 
-By default Deepmath will display the solving results using (Ka)TeX in a Webview window, Jupyter-style, using its web server. You should see something like this:
-
-```
-Training completed! Wrote results to local directory: /home/user/symbolic-rust/output/html
-Starting server at http://localhost:8888 and creating webview window...
-Pointing webview to server...
-
-Window is open. Use Ctrl-C to shut down this window.
-```
-
-If you want to output to HTML files directly, without the webview window, run:
-
-``` sh
-./target/release deepmath --load_from "model.dat" --predict --to_file output.html
-```
-
+There is a default set of problems that Deepmath will try to solve; in addition to those, you can choose to input custom ODEs and functions to solve, using the Web UI.

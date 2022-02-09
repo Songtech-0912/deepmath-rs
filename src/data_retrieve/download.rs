@@ -10,7 +10,7 @@ use std::path::PathBuf;
 pub const TAR_URL: &str = "https://dl.fbaipublicfiles.com/SymbolicMathematics/data/prim_fwd.tar.gz";
 
 pub fn init_download_dir(is_debug: bool) -> AnyhowResult<PathBuf> {
-    let folder = env::temp_dir().join("deepmath_data");
+    let folder = env::current_dir()?.join("deepmath_data");
     if is_debug {
         log::info!("Creating download folder {:?}", folder);
     };

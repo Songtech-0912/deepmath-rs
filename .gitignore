@@ -11,3 +11,9 @@ release*/
 *.cache
 *.pdb
 *.tmp
+
+# Project-specific files
+TODO.gtd
+deepmath_data*/
+deepmath_model*/
+IDEA.md

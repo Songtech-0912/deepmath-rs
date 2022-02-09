@@ -2,12 +2,13 @@
 use anyhow::Result as AnyhowResult;
 use clap::{App, Arg};
 use colored::*;
-use deepmath::data_retrieve::checks;
-use deepmath::data_retrieve::download;
-use deepmath::data_retrieve::unarchive;
+use deepmath::data_retrieve;
+use data_retrieve::checks;
+use data_retrieve::download;
+use data_retrieve::unarchive;
 use std::env;
-use std::fs::File;
-use std::io::prelude::*;
+// use std::fs::File;
+// use std::io::prelude::*;
 use std::path::Path;
 use termimad::*;
 
@@ -17,63 +18,14 @@ const _THIS_ALGORITHM_BECOME_SKYNET: bool = false;
 // To make sure that nothing weird happens from 4am coding
 const _IGNORE_4AM_CODING_BUGS: bool = true;
 
-// Deepmath markdown tutorial
-const TUTORIAL: &str = r#"
-**Deepmath tutorial**
-
-Hello from Deepmath! Deepmath is an alternative implementation of
-*"Deep Learning for Symbolic Mathematics"* in Rust. Its neural network
-can solve a variety of integration and differentiation problems.
-
-Follow the easy steps below to get started.
-
-**Step 1: Get the dataset**
-```
-deepmath --prepare --debug
-```
-
-**Step 2: Train the model**
-```
-deepmath --train --debug
-```
-
-By default Deepmath will train its model to `$TEMP_DIR/deepmath_data/model.dat`.
-This should be `/tmp` on Mac and Linux, and `%userprofile%\AppData\Local\Temp` for Windows.
-You can use the `--train_to <yourmodel.dat>` option instead to train
-to the location of your choice.
-
-**Step 3: Use the model to solve**
-
-You can let deepmath automatically find its trained model, typically saved
-to `$TEMP_DIR/deepmath_data/model.dat`:
-```
-deepmath --predict --input "equations.yml" --debug
-```
-
-Or you can manually specify a model path:
-```
-deepmath --load "model.dat" --input "equations.yml" --predict --debug
-```
-
-Note that you can choose to not specify the `--input` option. If that
-is the case, then Deepmath will solve a default set of equations from
-its built-in catalogue.
-
-Once the equations are solved, deepmath will open a WebView window
-showing the final results rendered in a Jupyter-style interface. If
-you don't want the WebView UI, you can instead output to static HTML
-files:
-
-```
-deepmath --input "equations.yml" --predict --to_file output.html --debug
-```
-"#;
+// Deepmath tutorial
+const TUTORIAL: &str = include_str!("./include/tutorial.md");
 
 fn show_tutorial(skin: &MadSkin) {
     println!("{}", skin.inline(TUTORIAL));
 }
 
-fn run(is_debug: bool) -> AnyhowResult<()> {
+fn prepare(is_debug: bool) -> AnyhowResult<()> {
     log::info!("Beginning data download");
     let datafolder = download::init_download_dir(is_debug)?;
     let data = download::get_data(is_debug)?;
@@ -90,10 +42,9 @@ fn run(is_debug: bool) -> AnyhowResult<()> {
 
 // Creates and trains model
 // this has an optional argument of a path to write the model to
-fn train(write_file: Option<&Path>, is_debug: bool) -> AnyhowResult<()> {
-    // Check that the dataset is already present in /tmp/deepmath
+fn train(write_file: Option<&Path>, is_debug: bool) -> AnyhowResult<()> { // Check that the dataset is already present in /tmp/deepmath
     log::info!("Finding downloaded dataset");
-    let default_output = &std::env::temp_dir().join("deepmath_data/model.dat");
+    let default_output = &std::env::current_dir()?.join("deepmath_data/model.dat");
     let output_file = write_file.unwrap_or(&default_output);
     let mode = match write_file {
         Some(_) => "debug",
@@ -114,21 +65,16 @@ fn train(write_file: Option<&Path>, is_debug: bool) -> AnyhowResult<()> {
 }
 
 struct PredictOptions {
-    is_predict_input: bool,
     is_predict_load: bool,
     is_predict_to_file: bool,
 }
 
 impl PredictOptions {
-    pub fn new(is_input: bool, is_load: bool, is_to_file: bool) -> PredictOptions {
+    pub fn new(is_load: bool, is_to_file: bool) -> PredictOptions {
         PredictOptions {
-            is_predict_input: is_input,
             is_predict_load: is_load,
             is_predict_to_file: is_to_file,
         }
-    }
-    pub fn is_predict_input(self) -> bool {
-        self.is_predict_input
     }
     pub fn is_predict_load(self) -> bool {
         self.is_predict_load
@@ -140,26 +86,9 @@ impl PredictOptions {
 
 // Uses pre-trained model to make predictions
 fn predict(
-    input_problems_file: Option<&Path>,
     model_to_load: Option<&Path>,
-    output_html: Option<&Path>,
     is_debug: bool,
 ) -> AnyhowResult<()> {
-    let default_problems = "these are the default questions";
-    let problems = match input_problems_file {
-        Some(path) => {
-            let mut file = File::open(&path)?;
-            let mut read_str = String::new();
-            file.read_to_string(&mut read_str)?;
-            read_str
-        }
-        None => String::from(default_problems),
-    };
-    // &std::env::temp_dir().join("deepmath_data/model.dat")
-    // let mode = match write_file {
-    //     Some(_) => "debug",
-    //     None => "standard",
-    // };
     Ok(())
 }
 
@@ -167,25 +96,28 @@ fn argparse() -> clap::ArgMatches {
     App::new("Deepmath")
         .version("1.0")
         .about("Deep learning model for symbolic mathematics in Rust.")
-        .arg(Arg::new("debug").short('d').long("debug").help(
-            "Toggles debug mode for verbose output. \
-                    This MUST be run with another command line argument.",
-        ))
         .arg(
-            Arg::new("prepare")
-                .short('p')
-                .long("prepare")
-                .help("Download training and test data from Facebook AI"),
+            Arg::new("debug")
+                .short('d')
+                .long("debug")
+                .help("Toggles debug mode for verbose output. \
+                    This MUST be run with another command line argument."),
         )
         .arg(
             Arg::new("tutorial")
-                .short('q')
+                .short('t')
                 .long("tutorial")
                 .help("Shows the Deepmath tutorial"),
         )
         .arg(
+            Arg::new("prepare")
+                .short('p')
+                .long("prepare")
+                .help("Downloads training and test data from Facebook AI archives"),
+        )
+        .arg(
             Arg::new("train")
-                .short('t')
+                .short('r')
                 .long("train")
                 .help("Train model and save model to the default location"),
         )
@@ -198,45 +130,22 @@ fn argparse() -> clap::ArgMatches {
         )
         .arg(
             Arg::new("predict")
-                .short('c')
+                .short('b')
                 .long("predict")
                 .help(
-                    "Uses trained model to predict. Can be \
-                    used optionally with --load for the trained model \
-                    to load and with --input for an input \
-                    equation list to solve",
-                )
-                .takes_value(true),
-        )
-        .arg(
-            Arg::new("input")
-                .short('i')
-                .long("input")
-                .help(
-                    "Reads equation from a .yml file to solve. \
-                    Must be used with --predict and --load.",
+                    "Uses trained model to predict. Shows WebView \
+                    UI for interacting with trained model.",
                 )
                 .takes_value(true),
         )
         .arg(
             Arg::new("load")
-                .short('u')
+                .short('i')
                 .long("load")
                 .help(
-                    "Loads a pre-trained model  \
+                    "Optionally load a pre-trained model \
                     from a .dat model archive. \
-                    Must be used with --predict and can \
-                    be optionally used with --input",
-                )
-                .takes_value(true),
-        )
-        .arg(
-            Arg::new("to_file")
-                .short('o')
-                .long("to_file")
-                .help(
-                    "Outputs rendered prediction results \
-                        to an html file of your choice",
+                    Must be used with --predict",
                 )
                 .takes_value(true),
         )
@@ -274,14 +183,12 @@ fn main() -> AnyhowResult<()> {
         let is_train = matches.is_present("train");
         let is_train_to_file = matches.is_present("train_to");
         let is_predict = matches.is_present("predict");
-        let is_predict_input = matches.is_present("input");
         let is_predict_load = matches.is_present("load");
-        let is_predict_to_file = matches.is_present("to_file");
 
         /* These are ordered so that even if the user gives an insane
         amount of arguments or even every possible argument at once:
           E.g.
-                deepmath --tutorial --prepare --train_to "model.dat" --predict --load "model.dat" --input "equations.,yml" --debug
+                deepmath --tutorial --prepare --train_to "model.dat" --predict --debug
           Deepmath would still function properly, of course
           it would have to do everything, but it doesn't break
         */
@@ -298,9 +205,9 @@ fn main() -> AnyhowResult<()> {
         // but maybe add args (for specifying custom location) in the future?
         if is_prepare {
             if is_debug_mode {
-                run(true)?;
+                prepare(true)?;
             } else {
-                run(false)?;
+                prepare(false)?;
             }
         }
         // regular train, to default path
@@ -322,23 +229,15 @@ fn main() -> AnyhowResult<()> {
         }
         // predict
         if is_predict {
-            // let input_problems_file = if is_predict_input {Path::new(matches.value_of("input").unwrap())} else { None };
-            let mut input_problems_file = None;
-            if is_predict_input {
-                input_problems_file = Some(Path::new(matches.value_of("input").unwrap()))
-            }
-            let mut model_to_load = None;
-            if is_predict_load {
-                model_to_load = Some(Path::new(matches.value_of("load").unwrap()))
-            }
-            let mut output_html = None;
-            if is_predict_to_file {
-                output_html = Some(Path::new(matches.value_of("to_file").unwrap()))
-            }
+            let model_to_load = match is_predict_load {
+                true => Some(Path::new(matches.value_of("load").unwrap())),
+                false => unimplemented!()
+            };
+
             if is_debug_mode {
-                predict(input_problems_file, model_to_load, output_html, true)?;
+                predict(model_to_load, true)?;
             } else {
-                predict(input_problems_file, model_to_load, output_html, false)?;
+                predict(model_to_load, false)?;
             }
         }
         // catch-all for everything else
