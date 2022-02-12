@@ -8,5 +8,5 @@ pub fn data_location() -> AnyhowResult<PathBuf> {
 }
 
 pub fn data_present() -> AnyhowResult<bool> {
-    Ok(true)
+    Ok(data_location()?.exists())
 }
