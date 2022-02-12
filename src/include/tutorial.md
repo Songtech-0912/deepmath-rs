@@ -1,4 +1,4 @@
-**Deepmath tutorial**
+# Deepmath tutorial
 
 Hello from Deepmath! Deepmath is an alternative implementation of
 *"Deep Learning for Symbolic Mathematics"* in Rust. Its neural network
