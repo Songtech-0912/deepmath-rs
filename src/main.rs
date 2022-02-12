@@ -12,6 +12,9 @@ use std::env;
 use std::path::Path;
 use termimad::*;
 
+// For sake of time I will be hardcoding some properties
+const MAX_EPOCHS: i64 = 30000;
+
 // Just in case, to stay on the safe side
 const _THIS_ALGORITHM_BECOME_SKYNET: bool = false;
 
@@ -26,18 +29,25 @@ fn show_tutorial(skin: &MadSkin) {
 }
 
 fn prepare(is_debug: bool) -> AnyhowResult<()> {
-    log::info!("Beginning data download");
-    let datafolder = download::init_download_dir(is_debug)?;
-    let data = download::get_data(is_debug)?;
-    let _ = download::get_filesize(is_debug)?;
-    let data_filename = download::get_filename(is_debug)?;
-    let data_full_path = datafolder.join(data_filename);
-    let _ = download::contents_to_file(data, &data_full_path, is_debug);
-    log::info!("Finished data download");
-    log::info!("Beginning data decompress");
-    let _ = unarchive::decompress(&data_full_path, &datafolder, is_debug);
-    log::info!("Finished data decompress");
-    Ok(())
+    // Check if data has been downloaded
+    let is_downloaded = &std::env::current_dir()?.join("deepmath_data/").exists();
+    if !is_downloaded {
+        log::info!("Beginning data download");
+        let datafolder = download::init_download_dir(is_debug)?;
+        let data = download::get_data(is_debug)?;
+        let _ = download::get_filesize(is_debug)?;
+        let data_filename = download::get_filename(is_debug)?;
+        let data_full_path = datafolder.join(data_filename);
+        let _ = download::contents_to_file(data, &data_full_path, is_debug);
+        log::info!("Finished data download");
+        log::info!("Beginning data decompress");
+        let _ = unarchive::decompress(&data_full_path, &datafolder, is_debug);
+        log::info!("Finished data decompress");
+        Ok(())
+    } else {
+        log::error!("You've already downloaded the data, run {} instead!", "deepmath --train".green());
+        Ok(())
+    }
 }
 
 // Creates and trains model
@@ -46,9 +56,9 @@ fn train(write_file: Option<&Path>, is_debug: bool) -> AnyhowResult<()> { // Che
     log::info!("Finding downloaded dataset");
     let default_output = &std::env::current_dir()?.join("deepmath_data/model.dat");
     let output_file = write_file.unwrap_or(&default_output);
-    let mode = match write_file {
-        Some(_) => "debug",
-        None => "standard",
+    let mode = match is_debug {
+        true => "debug",
+        false => "standard",
     };
     log::info!("Training under {} mode to {}", mode, &output_file.display());
     if checks::data_present()? {
@@ -62,26 +72,6 @@ fn train(write_file: Option<&Path>, is_debug: bool) -> AnyhowResult<()> { // Che
         );
     }
     Ok(())
-}
-
-struct PredictOptions {
-    is_predict_load: bool,
-    is_predict_to_file: bool,
-}
-
-impl PredictOptions {
-    pub fn new(is_load: bool, is_to_file: bool) -> PredictOptions {
-        PredictOptions {
-            is_predict_load: is_load,
-            is_predict_to_file: is_to_file,
-        }
-    }
-    pub fn is_predict_load(self) -> bool {
-        self.is_predict_load
-    }
-    pub fn is_predict_to_file(self) -> bool {
-        self.is_predict_to_file
-    }
 }
 
 // Uses pre-trained model to make predictions
@@ -119,13 +109,13 @@ fn argparse() -> clap::ArgMatches {
             Arg::new("train")
                 .short('r')
                 .long("train")
-                .help("Train model and save model to the default location"),
+                .help("Train model and save trained model to the default location"),
         )
         .arg(
             Arg::new("train_to")
                 .short('e')
                 .long("train_to")
-                .help("Train model and save model to a specified location")
+                .help("Train model and save trained model to a specified location")
                 .takes_value(true),
         )
         .arg(
